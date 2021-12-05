@@ -840,7 +840,7 @@ class NetRangerBuf(object):
         target_dir = self.cur_node.fullpath
         if not os.path.isdir(target_dir):
             target_dir = os.path.dirname(target_dir)
-        Vim.command(f'silent lcd {target_dir}')
+        Vim.command(f'silent cd {target_dir}')
         self.last_vim_pwd = target_dir
 
     def _record_previewee(self, bufnr, winid):
@@ -882,6 +882,7 @@ class NetRangerBuf(object):
         Vim.current.window.vars['netranger_is_previewer'] = True
         self._close_last_previewee()
 
+        Vim.command('silent wincmd o')
         cur_node = self.cur_node
 
         total_width = Vim.CurWinWidth()
@@ -1576,14 +1577,28 @@ class Netranger(object):
         """ Open the current node on the right with the current node serving as
         a panel.
         """
+        Vim.command("echom 'OpenPanel'")
         if self.cur_node.is_DIR:
             with self.KeepPreviewState():
                 self.NETRBufOpen()
             return
 
-        if not self._is_previewing:
-            self.NETRTogglePreview()
-        Vim.command('wincmd l')
+        if  self._is_previewing:
+            Vim.command('wincmd l') 
+            return
+
+            # self.NETRTogglePreview()
+        if len(Vim.current.tabpage.windows) == 1:
+            self.NETROpen(Vim.Var('NETRSplitOrientation') + ' vsplit',
+                          use_rifle=False)
+            if Vim.Var('NETRPanelSize'):
+                newsize = Vim.CurWinWidth() * Vim.Var('NETRPanelSize')
+                Vim.command(f'vertical resize {newsize}')
+        else:
+            fpath = self.cur_node.fullpath
+            Vim.command('wincmd l')
+            Vim.command(f'edit {fpath}')
+        
 
     def NETRAskOpen(self):
         """ Show the AskUI. """
@@ -2056,7 +2071,7 @@ class Netranger(object):
 
         filtered_nodes = self._cur_search_buf.nodes[0:-1]
 
-        ignore_case = False
+        ignore_case = True         #we override the option EYAL
         if pattern and pattern:
             if (Vim.options['smartcase'] and re.match(
                     '[A-Z]', pattern)) or not Vim.options['ignorecase']:
@@ -2166,3 +2181,4 @@ class Netranger(object):
     def NETRemoteList(self):
         """ List rclone remotes in NETRemoteCacheDir. """
         Rclone.list_remotes_in_vim_buffer()
+
