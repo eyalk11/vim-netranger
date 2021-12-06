@@ -197,7 +197,6 @@ class LocalFS(object):
 
     @classmethod
     def cp(self, src_arr, dst, sudo=False, on_exit=None):
-        print("uuu",src_arr,dst)
         self.exec_server_cmd('cp',
                              on_exit, {
                                  'src': src_arr,
